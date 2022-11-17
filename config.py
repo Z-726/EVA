@@ -22,14 +22,14 @@ class Config(argparse.Namespace):
         self.eps_decay = 5e-6
         self.replay_buffer_size = 400000
         self.value_buffer_size  = 2000
-        self.n_episodes = 80000
+        self.n_episodes = 10000000
         self.batch_size = 48
         self.num_tcp_paths = 10
         self.n_neighbors_value_buffer = 5
         self.save_freq = 2000
-        self.eval_freq = 1000
+        self.eval_freq = 10000
         self.save_dir = 'results'
-        self.write_video = True
+        self.write_video = False
 
 def parse_arguments(config):
     '''

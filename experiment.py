@@ -6,6 +6,7 @@ from replay_buffer import ReplayBuffer
 from config import Config, parse_arguments
 from train_test import train
 import utils
+import datetime, json, os
 
 env = None
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -27,7 +28,15 @@ def main():
     replay_buffer = ReplayBuffer(config.replay_buffer_size, config.embedding_size, config.path_length)
     optimizer = torch.optim.Adam(qnet.parameters(), lr=config.lr)
     value_buffer = ValueBuffer(config.value_buffer_size)
-    train(env, qnet, target_net, optimizer, replay_buffer, value_buffer, config, device)
+    eval_rewards = train(env, qnet, target_net, optimizer, replay_buffer, value_buffer, config, device)
+
+    reward_save_path = 'results/' + config.envname + '/EVA'
+    now = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
+    os.makedirs(reward_save_path, exist_ok=True)
+    reward_save_path = reward_save_path + '/' + now + '.json'
+    print(reward_save_path)
+    with open(reward_save_path, 'w') as f:
+        json.dump(eval_rewards, f)
 
 
 if __name__ == "__main__":

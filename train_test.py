@@ -147,7 +147,8 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
         return np.mean(episode_rewards)
 
     os.makedirs(config.save_dir, exist_ok=True)
-    for episode in range(1, config.n_episodes + 1, 1):
+    episode = 0
+    while global_step < config.n_episodes:
         state = env.reset()
         is_terminal = False
         episode_reward = 0
@@ -175,14 +176,14 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
             if is_terminal:
                 total_rewards.append(episode_reward)
                 total_global_steps.append(global_step)
+                episode += 1
                 break
 
-        # call evaluation every config.eval_freq episode
-        if episode % config.eval_freq == 0:
-            eval_rewards.append(evaluate(episode))
-            logging.info("Episode: {}    mean_eval_reward = {}".format(episode, eval_rewards[-1]))
-            eval_global_steps.append(global_step)   
+            if global_step % config.eval_freq == 0:
+                eval_rewards.append(evaluate(episode))
+                logging.info("Episode: {}    mean_eval_reward = {}".format(episode, eval_rewards[-1]))
+                eval_global_steps.append(global_step) 
 
-        # store results every config.save_freq episodes
-        if episode % config.save_freq == 0:
-            save_results(episode)
+
+
+    return eval_rewards

@@ -58,7 +58,7 @@ def trajectory_central_planning(embedding, replay, value_buffer, qnet, config, d
             state_batch = torch.from_numpy(np.stack(state_batch)).to(device)
 
             # calculation of parametric values of Q function via neural net
-            qnp = qnet(state_batch)[0].detach().cpu()
+            qnp = qnet(state_batch.float())[0].detach().cpu()
 
             # for all states corresponding to non last length of trajectory (t != T), 
             # we overwrite parametric values of Q function with 

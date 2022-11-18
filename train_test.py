@@ -9,7 +9,7 @@ from tcp import trajectory_central_planning
 
 logging.basicConfig(level=20)
 
-def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device):
+def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device, envpool):
     """
     Performs loop for a train step for EVA
     """
@@ -51,6 +51,7 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
         Input: state 
         return: action, embedding for state
         """
+
         q_param, embedding = qnet(torch.FloatTensor(state).to(device).unsqueeze(0))
         q_param            = q_param.detach().cpu().squeeze()
         embedding          = embedding.detach().cpu().squeeze().numpy()
@@ -68,6 +69,8 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
     def step(action):
         """returns next state and revard based on action"""
         next_state, reward, is_terminal,_ = env.step(action)
+        if envpool:
+            next_state = np.squeeze(next_state)
         if is_terminal:
             next_state = None
         return next_state, reward, is_terminal
@@ -100,9 +103,9 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
         # Compute Q values for all next states. 
         # Expected values for non-terminal next states are computed based on older target net. 
         # The use of mask helps to have expected state value or 0 for terminal state
-        q_predicted              = qnet(state_batch)[0].gather(1, action_batch)
+        q_predicted              = qnet(state_batch.float())[0].gather(1, action_batch)
         q_target                 = torch.zeros_like(q_predicted)
-        q_target[non_final_mask] = target_net(next_state_batch)[0].max(1, keepdim=True)[0].detach()
+        q_target[non_final_mask] = target_net(next_state_batch.float())[0].max(1, keepdim=True)[0].detach()
         
         # Compute expected Q values and optimize the model
         loss = F.mse_loss(q_predicted, q_target * config.gamma + reward_batch)
@@ -121,10 +124,16 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
 
 
             state = env.reset()
+            if envpool:
+                state = np.squeeze(state)
             is_terminal = False
             episode_reward = 0.
             for _ in range(config.t_max):
                 action, _ = choose_action_embedding(state, epsilon=0)
+                if envpool:
+                    action_list=[]
+                    action_list.append(action)
+                    action = np.array(action_list)
                 state, reward, is_terminal = step(action)
                 if config.write_video and not is_terminal:
                     state_frames.append(state[0])
@@ -150,6 +159,8 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
     episode = 0
     while global_step < config.n_episodes:
         state = env.reset()
+        if envpool:
+            state = np.squeeze(state)
         is_terminal = False
         episode_reward = 0
         
@@ -157,6 +168,10 @@ def train(env, qnet, target_net, optimizer, replay, value_buffer, config, device
         for _ in range(config.t_max):
             action, embedding  = choose_action_embedding( state, 
                                                           utils.epsilon(global_step, config) )
+            if envpool:
+                action_list=[]
+                action_list.append(action)
+                action = np.array(action_list)
             next_state, reward, is_terminal = step(action)
             replay.push(state, action, reward, next_state, embedding)        
             state = next_state

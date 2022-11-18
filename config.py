@@ -80,5 +80,11 @@ def parse_arguments(config):
                         help='directory to store results')
     parser.add_argument('--write_video', default=config.write_video, type=bool, 
                         help='write video during eval episodes')
+    parser.add_argument("--frames_stack", type=int, default=4)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--scale", type=int, default=0)
+    parser.add_argument("--training_num", type=int, default=1)
+    parser.add_argument("--test_num", type=int, default=1)
+    parser.add_argument("--envpool", type=bool, default=True)
     parser.parse_args(namespace=config)
 

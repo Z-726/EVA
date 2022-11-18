@@ -7,6 +7,7 @@ from config import Config, parse_arguments
 from train_test import train
 import utils
 import datetime, json, os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 env = None
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,7 +20,9 @@ def main():
     '''
     global env
     logging.info("Started...")
-    env = utils.make_env(config)
+    envpool = config.envpool
+    env = utils.make_atari_env(config)
+    # env = utils.make_env(config)
     n_actions = env.action_space.n
     qnet = Qnet(n_actions, embedding_size=config.embedding_size).to(device)
     target_net = Qnet(n_actions, embedding_size=config.embedding_size).to(device)
@@ -28,7 +31,7 @@ def main():
     replay_buffer = ReplayBuffer(config.replay_buffer_size, config.embedding_size, config.path_length)
     optimizer = torch.optim.Adam(qnet.parameters(), lr=config.lr)
     value_buffer = ValueBuffer(config.value_buffer_size)
-    eval_rewards = train(env, qnet, target_net, optimizer, replay_buffer, value_buffer, config, device)
+    eval_rewards = train(env, qnet, target_net, optimizer, replay_buffer, value_buffer, config, device, envpool)
 
     reward_save_path = 'results/' + config.envname + '/EVA'
     now = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
